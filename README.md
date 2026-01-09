@@ -42,5 +42,36 @@ This project includes a local AI tutor script: `scripts/supervisor.py`.
 3.  Fill in the blanks.
 4.  Run the supervisor to check your work!
 
+## 📚 Supported Algorithms (Progress)
+We are actively converting algorithms. Here is the current progress:
+
+### ✅ Batch 7: Sorting
+-   **Insertion Sort**
+-   **Selection Sort**
+-   **Heap Sort**
+
+### ✅ Batch 8: Strings
+-   **Knuth-Morris-Pratt (KMP)**
+-   **Rabin-Karp**
+-   **Z-Function**
+
+### ✅ Batch 9: Ciphers & Math
+-   **Caesar Cipher**
+-   **Vigenere Cipher**
+-   **Euclidean GCD**
+-   **Sieve of Eratosthenes**
+
+### ✅ Batch 10: Backtracking & Search
+-   **N-Queens**
+-   **Sudoku Solver**
+-   **Binary Search**
+-   **Single Number**
+
+### 🚧 Batch 11: Matrix & Linear Algebra (In Progress)
+-   **Matrix Multiplication**
+-   **Matrix Transposition**
+-   **Strassen's Algorithm**
+-   **Rotate Matrix**
+
 ---
 *Forked from [TheAlgorithms/Python](https://github.com/TheAlgorithms/Python)*
