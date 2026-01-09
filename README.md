@@ -1,7 +1,11 @@
 <div align="center">
   <h1>SideBySide Algorithms</h1>
   <h3>Learn Algorithms by Comparing Languages</h3>
+  <p><em>Converting TheAlgorithms/Python into C++, JavaScript, Rust, and Go for interactive learning.</em></p>
 </div>
+
+> [!IMPORTANT]
+> **This is a specialized fork.** While the original [TheAlgorithms/Python](https://github.com/TheAlgorithms/Python) repository collects algorithms implemented in Python, **this repository** is dedicated to **converting** those algorithms into other languages (C++, JS, Rust, Go) side-by-side and generating **interactive exercises** to help you learn them.
 
 ## 🎯 Project Goal
 This repository is an experiment in **Side-by-Side Learning**. We take classic algorithms (originally in Python) and:

@@ -1,7 +1,7 @@
 [project]
-name = "thealgorithms-python"
+name = "sidebyside-algorithms"
 version = "0.0.1"
-description = "TheAlgorithms in Python"
+description = "SideBySide Algorithms: Learn by converting Python algorithms to C++, JS, Rust, and Go"
 authors = [ { name = "TheAlgorithms Contributors" } ]
 requires-python = ">=3.14"
 classifiers = [
