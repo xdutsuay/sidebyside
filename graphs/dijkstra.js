@@ -1,72 +1,107 @@
 /**
- * Dijkstra's Algorithm in JavaScript
+ * Dijkstra's Algorithm Implementation
  */
+
 class PriorityQueue {
     constructor() {
-        this.list = [];
+        this.values = [];
     }
 
-    enqueue(element, priority) {
-        this.list.push({ element, priority });
-        this.list.sort((a, b) => a.priority - b.priority);
+    enqueue(val, priority) {
+        this.values.push({ val, priority });
+        this.sort();
     }
 
     dequeue() {
-        return this.list.shift();
+        return this.values.shift();
+    }
+
+    sort() {
+        this.values.sort((a, b) => a.priority - b.priority);
     }
 
     isEmpty() {
-        return this.list.length === 0;
+        return this.values.length === 0;
     }
 }
 
 class Graph {
     constructor() {
-        this.adj = {};
+        this.adjacencyList = {};
     }
 
-    addEdge(u, v, weight) {
-        if (!this.adj[u]) this.adj[u] = [];
-        this.adj[u].push({ node: v, weight });
+    addVertex(vertex) {
+        if (!this.adjacencyList[vertex]) this.adjacencyList[vertex] = [];
     }
 
-    dijkstra(start, end) {
-        let pq = new PriorityQueue();
-        let visited = new Set();
+    addEdge(vertex1, vertex2, weight) {
+        this.adjacencyList[vertex1].push({ node: vertex2, weight });
+        this.adjacencyList[vertex2].push({ node: vertex1, weight });
+    }
 
-        pq.enqueue(start, 0);
+    Dijkstra(start, finish) {
+        const nodes = new PriorityQueue();
+        const distances = {};
+        const previous = {};
+        let path = [];
+        let smallest;
 
-        while (!pq.isEmpty()) {
-            let current = pq.dequeue();
-            let u = current.element;
-            let cost = current.priority;
+        for (let vertex in this.adjacencyList) {
+            if (vertex === start) {
+                distances[vertex] = 0;
+                nodes.enqueue(vertex, 0);
+            } else {
+                distances[vertex] = Infinity;
+                nodes.enqueue(vertex, Infinity);
+            }
+            previous[vertex] = null;
+        }
 
-            if (visited.has(u)) continue;
-            visited.add(u);
+        while (!nodes.isEmpty()) {
+            smallest = nodes.dequeue().val;
 
-            if (u === end) return cost;
+            if (smallest === finish) {
+                while (previous[smallest]) {
+                    path.push(smallest);
+                    smallest = previous[smallest];
+                }
+                break;
+            }
 
-            if (this.adj[u]) {
-                for (let neighbor of this.adj[u]) {
-                    let v = neighbor.node;
-                    let w = neighbor.weight;
+            if (smallest || distances[smallest] !== Infinity) {
+                for (let neighbor in this.adjacencyList[smallest]) {
+                    let nextNode = this.adjacencyList[smallest][neighbor];
+                    let candidate = distances[smallest] + nextNode.weight;
+                    let nextNeighbor = nextNode.node;
 
-                    if (!visited.has(v)) {
-                        pq.enqueue(v, cost + w);
+                    if (candidate < distances[nextNeighbor]) {
+                        distances[nextNeighbor] = candidate;
+                        previous[nextNeighbor] = smallest;
+                        nodes.enqueue(nextNeighbor, candidate);
                     }
                 }
             }
         }
-        return -1;
+        return path.concat(smallest).reverse();
     }
 }
 
-const g = new Graph();
-g.addEdge("A", "B", 2); g.addEdge("A", "C", 5);
-g.addEdge("B", "A", 2); g.addEdge("B", "D", 3); g.addEdge("B", "E", 1); g.addEdge("B", "F", 1);
-g.addEdge("C", "A", 5); g.addEdge("C", "F", 3);
-g.addEdge("D", "B", 3);
-g.addEdge("E", "B", 4); g.addEdge("E", "F", 3);
-g.addEdge("F", "C", 3); g.addEdge("F", "E", 3);
+// Driver code
+var graph = new Graph();
+graph.addVertex("A");
+graph.addVertex("B");
+graph.addVertex("C");
+graph.addVertex("D");
+graph.addVertex("E");
+graph.addVertex("F");
 
-console.log(g.dijkstra("E", "C"));
+graph.addEdge("A", "B", 4);
+graph.addEdge("A", "C", 2);
+graph.addEdge("B", "E", 3);
+graph.addEdge("C", "D", 2);
+graph.addEdge("C", "F", 4);
+graph.addEdge("D", "E", 3);
+graph.addEdge("D", "F", 1);
+graph.addEdge("E", "F", 1);
+
+console.log(graph.Dijkstra("A", "E"));

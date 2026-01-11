@@ -1,132 +1,97 @@
-use std::cmp::Ordering;
+/**
+ * A* Search Algorithm in Rust
+ */
 
-#[derive(Clone, Eq, PartialEq)]
-struct Node {
-    f: i32,
-    g: i32,
-    x: usize,
-    y: usize,
+use std::cmp::Ordering;
+use std::collections::BinaryHeap;
+
+#[derive(Copy, Clone, Eq, PartialEq)]
+struct State {
+    cost: usize,
+    position: (usize, usize),
 }
 
-// Implement Ord for sorting in BinaryHeap or Vec sorting
-impl Ord for Node {
+impl Ord for State {
     fn cmp(&self, other: &Self) -> Ordering {
-        // We want min f. 
-        // If using Vec sort: sort ascending f.
-        other.f.cmp(&self.f) // for max heap to behave like min heap usually, but here python uses list sort.
+        other.cost.cmp(&self.cost)
+            .then_with(|| self.position.cmp(&other.position))
     }
 }
 
-impl PartialOrd for Node {
+impl PartialOrd for State {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
     }
 }
 
-const DIRECTIONS: [[i32; 2]; 4] = [[-1, 0], [0, -1], [1, 0], [0, 1]];
+fn heuristic(a: (usize, usize), b: (usize, usize)) -> usize {
+    ((a.0 as isize - b.0 as isize).abs() + (a.1 as isize - b.1 as isize).abs()) as usize
+}
 
-fn search(
-    grid: &Vec<Vec<i32>>,
-    init: [usize; 2],
-    goal: [usize; 2],
-    cost: i32,
-    heuristic: &Vec<Vec<i32>>,
-) -> (Vec<[usize; 2]>, Vec<Vec<usize>>) {
+fn a_star(grid: &Vec<Vec<i32>>, start: (usize, usize), goal: (usize, usize)) -> Option<usize> {
     let rows = grid.len();
     let cols = grid[0].len();
-    
-    let mut closed = vec![vec![0; cols]; rows];
-    let mut action = vec![vec![0; cols]; rows];
-    
-    closed[init[0]][init[1]] = 1;
-    
-    let mut x = init[0];
-    let mut y = init[1];
-    let mut g = 0;
-    let f = g + heuristic[x][y];
-    
-    let mut open = Vec::new();
-    open.push(Node { f, g, x, y });
-    
-    let mut found = false;
-    let mut resign = false;
-    
-    while !found && !resign {
-        if open.is_empty() {
-            resign = true;
-            println!("Algorithm is unable to find solution");
-            return (Vec::new(), Vec::new());
-        } else {
-            // Sort descending by f 
-            open.sort_by(|a, b| b.f.cmp(&a.f));
-            let next_cell = open.pop().unwrap();
-            
-            x = next_cell.x;
-            y = next_cell.y;
-            g = next_cell.g;
-            
-            if x == goal[0] && y == goal[1] {
-                found = true;
-            } else {
-                for i in 0..4 {
-                    let x2_i = x as i32 + DIRECTIONS[i][0];
-                    let y2_i = y as i32 + DIRECTIONS[i][1];
-                    
-                    if x2_i >= 0 && x2_i < rows as i32 && y2_i >= 0 && y2_i < cols as i32 {
-                        let x2 = x2_i as usize;
-                        let y2 = y2_i as usize;
-                        
-                        if closed[x2][y2] == 0 && grid[x2][y2] == 0 {
-                            let g2 = g + cost;
-                            let f2 = g2 + heuristic[x2][y2];
-                            open.push(Node { f: f2, g: g2, x: x2, y: y2 });
-                            closed[x2][y2] = 1;
-                            action[x2][y2] = i;
-                        }
-                    }
+
+    let mut dist = vec![vec![usize::MAX; cols]; rows];
+    let mut heap = BinaryHeap::new();
+
+    dist[start.0][start.1] = 0;
+    heap.push(State { cost: 0, position: start });
+
+    while let Some(State { cost, position }) = heap.pop() {
+        if position == goal {
+            return Some(cost);
+        }
+
+        if cost > dist[position.0][position.1] + heuristic(position, goal) {
+            continue;
+        }
+
+        let (r, c) = position;
+        let moves = [(0, 1), (0, -1), (1, 0), (-1, 0)];
+
+        for (dr, dc) in moves.iter() {
+            let nr = r as isize + dr;
+            let nc = c as isize + dc;
+
+            if nr >= 0 && nr < rows as isize && nc >= 0 && nc < cols as isize {
+                let nr = nr as usize;
+                let nc = nc as usize;
+
+                if grid[nr][nc] == 0 { // 0 is wall in this implementation
+                     continue;
+                }
+
+                let next_cost = dist[r][c] + 1; // Assuming cost 1 to move
+
+                if next_cost < dist[nr][nc] {
+                    heap.push(State {
+                        cost: next_cost + heuristic((nr, nc), goal),
+                        position: (nr, nc),
+                    });
+                    dist[nr][nc] = next_cost;
                 }
             }
         }
     }
-    
-    let mut path = Vec::new();
-    if found {
-        x = goal[0];
-        y = goal[1];
-        path.push([x, y]);
-        
-        while x != init[0] || y != init[1] {
-            let x2 = x as i32 - DIRECTIONS[action[x][y]][0];
-            let y2 = y as i32 - DIRECTIONS[action[x][y]][1];
-            x = x2 as usize;
-            y = y2 as usize;
-            path.push([x, y]);
-        }
-        path.reverse();
-    }
-    (path, action)
+    None
 }
 
 fn main() {
+    // 1-Walkable, 0-Blocked
     let grid = vec![
-        vec![0, 1, 0, 0, 0, 0],
-        vec![0, 1, 0, 0, 0, 0],
-        vec![0, 1, 0, 0, 0, 0],
-        vec![0, 1, 0, 0, 1, 0],
-        vec![0, 0, 0, 0, 1, 0],
+        vec![1, 0, 1, 1, 1],
+        vec![1, 1, 1, 0, 1],
+        vec![1, 1, 1, 0, 1],
+        vec![0, 0, 1, 0, 1],
+        vec![1, 1, 1, 0, 1],
     ];
-    let init = [0, 0];
-    let goal = [grid.len() - 1, grid[0].len() - 1];
-    let cost = 1;
-    
-    let mut heuristic = vec![vec![0; grid[0].len()]; grid.len()];
-    for i in 0..grid.len() {
-        for j in 0..grid[0].len() {
-            heuristic[i][j] = ((i as i32 - goal[0] as i32).abs() + (j as i32 - goal[1] as i32).abs());
-            if grid[i][j] == 1 { heuristic[i][j] = 99; }
-        }
-    }
 
-    let (path, _) = search(&grid, init, goal, cost, &heuristic);
-    println!("Path: {:?}", path);
+    let start = (0, 0);
+    let goal = (4, 4);
+
+    match a_star(&grid, start, goal) {
+        Some(cost) => println!("Minimum cost: {}", cost),
+        None => println!("No path found"),
+    }
 }

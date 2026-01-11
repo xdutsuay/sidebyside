@@ -1,119 +1,153 @@
 package main
 
 import (
+	"container/heap"
 	"fmt"
 	"math"
-	"sort"
 )
 
+type Point struct {
+	x, y int
+}
+
 type Node struct {
-	f, g, x, y int
+	pt     Point
+	g, h, f int
+	parent *Node
+	index  int
 }
 
-var directions = [][2]int{
-	{-1, 0}, {0, -1}, {1, 0}, {0, 1},
+type PriorityQueue []*Node
+
+func (pq PriorityQueue) Len() int { return len(pq) }
+
+func (pq PriorityQueue) Less(i, j int) bool {
+	return pq[i].f < pq[j].f
 }
 
-func search(grid [][]int, init []int, goal []int, cost int, heuristic [][]int) ([][]int, [][]int) {
+func (pq PriorityQueue) Swap(i, j int) {
+	pq[i], pq[j] = pq[j], pq[i]
+	pq[i].index = i
+	pq[j].index = j
+}
+
+func (pq *PriorityQueue) Push(x interface{}) {
+	n := len(*pq)
+	item := x.(*Node)
+	item.index = n
+	*pq = append(*pq, item)
+}
+
+func (pq *PriorityQueue) Pop() interface{} {
+	old := *pq
+	n := len(old)
+	item := old[n-1]
+	item.index = -1
+	*pq = old[0 : n-1]
+	return item
+}
+
+func abs(x int) int {
+	if x < 0 {
+		return -x
+	}
+	return x
+}
+
+func heuristic(a, b Point) int {
+	return abs(a.x-b.x) + abs(a.y-b.y)
+}
+
+func AStar(grid [][]int, start, end Point) []*Point {
 	rows := len(grid)
 	cols := len(grid[0])
 
-	closed := make([][]int, rows)
-	action := make([][]int, rows)
-	for i := range closed {
-		closed[i] = make([]int, cols)
-		action[i] = make([]int, cols)
-	}
+	openList := make(PriorityQueue, 0)
+	heap.Init(&openList)
 
-	closed[init[0]][init[1]] = 1
+	startNode := &Node{pt: start, g: 0, h: 0, f: 0}
+	heap.Push(&openList, startNode)
 
-	x, y := init[0], init[1]
-	g := 0
-	f := g + heuristic[x][y]
+	closedList := make(map[Point]bool)
+	
+	// Keep track of visited nodes to avoid re-adding
+	nodeMap := make(map[Point]*Node)
+	nodeMap[start] = startNode
 
-	open := []Node{{f, g, x, y}}
+	for openList.Len() > 0 {
+		current := heap.Pop(&openList).(*Node)
 
-	found := false
-	resign := false
+		if current.pt == end {
+			var path []*Point
+			for curr := current; curr != nil; curr = curr.parent {
+				path = append(path, &curr.pt)
+			}
+			// Reverse
+			for i, j := 0, len(path)-1; i < j; i, j = i+1, j-1 {
+				path[i], path[j] = path[j], path[i]
+			}
+			return path
+		}
 
-	for !found && !resign {
-		if len(open) == 0 {
-			resign = true
-			fmt.Println("Algorithm is unable to find solution")
-			return nil, nil
-		} else {
-			// Sort descending by f
-			sort.Slice(open, func(i, j int) bool {
-				return open[i].f > open[j].f
-			})
-			
-			next := open[len(open)-1]
-			open = open[:len(open)-1]
+		closedList[current.pt] = true
 
-			x, y = next.x, next.y
-			g = next.g
+		moves := []Point{{0, 1}, {0, -1}, {1, 0}, {-1, 0}}
+		for _, move := range moves {
+			neighborPt := Point{current.pt.x + move.x, current.pt.y + move.y}
 
-			if x == goal[0] && y == goal[1] {
-				found = true
-			} else {
-				for i, d := range directions {
-					x2 := x + d[0]
-					y2 := y + d[1]
+			if neighborPt.x < 0 || neighborPt.x >= rows || neighborPt.y < 0 || neighborPt.y >= cols {
+				continue
+			}
 
-					if x2 >= 0 && x2 < rows && y2 >= 0 && y2 < cols && 
-						closed[x2][y2] == 0 && grid[x2][y2] == 0 {
-						
-						g2 := g + cost
-						f2 := g2 + heuristic[x2][y2]
-						open = append(open, Node{f2, g2, x2, y2})
-						closed[x2][y2] = 1
-						action[x2][y2] = i
-					}
+			if grid[neighborPt.x][neighborPt.y] == 0 || closedList[neighborPt] {
+				continue
+			}
+
+			gScore := current.g + 1
+			hScore := heuristic(neighborPt, end)
+			fScore := gScore + hScore
+
+			if existingNode, exists := nodeMap[neighborPt]; exists {
+				if gScore < existingNode.g {
+					existingNode.g = gScore
+					existingNode.f = fScore
+					existingNode.parent = current
+					heap.Fix(&openList, existingNode.index)
 				}
+			} else {
+				neighborNode := &Node{
+					pt:     neighborPt,
+					g:      gScore,
+					h:      hScore,
+					f:      fScore,
+					parent: current,
+				}
+				nodeMap[neighborPt] = neighborNode
+				heap.Push(&openList, neighborNode)
 			}
 		}
 	}
-
-	path := [][]int{}
-	if found {
-		x, y = goal[0], goal[1]
-		invpath := [][]int{{x, y}}
-
-		for x != init[0] || y != init[1] {
-			x2 := x - directions[action[x][y]][0]
-			y2 := y - directions[action[x][y]][1]
-			x, y = x2, y2
-			invpath = append(invpath, []int{x, y})
-		}
-		
-		for i := len(invpath) - 1; i >= 0; i-- {
-			path = append(path, invpath[i])
-		}
-	}
-	return path, action
+	return nil
 }
 
 func main() {
+	// 1-Walkable, 0-Blocked
 	grid := [][]int{
-		{0, 1, 0, 0, 0, 0},
-		{0, 1, 0, 0, 0, 0},
-		{0, 1, 0, 0, 0, 0},
-		{0, 1, 0, 0, 1, 0},
-		{0, 0, 0, 0, 1, 0},
-	}
-	init := []int{0, 0}
-	goal := []int{len(grid) - 1, len(grid[0]) - 1}
-	cost := 1
-	
-	heuristic := make([][]int, len(grid))
-	for i := range heuristic {
-		heuristic[i] = make([]int, len(grid[0]))
-		for j := range heuristic[i] {
-			heuristic[i][j] = int(math.Abs(float64(i - goal[0])) + math.Abs(float64(j - goal[1])))
-			if grid[i][j] == 1 { heuristic[i][j] = 99 }
-		}
+		{1, 0, 1, 1, 1},
+		{1, 1, 1, 0, 1},
+		{1, 1, 1, 0, 1},
+		{0, 0, 1, 0, 1},
+		{1, 1, 1, 0, 1},
 	}
 
-	path, _ := search(grid, init, goal, cost, heuristic)
-	fmt.Println("Path:", path)
+	path := AStar(grid, Point{0, 0}, Point{4, 4})
+	if path != nil {
+		fmt.Println("Path found:")
+		for _, pt := range path {
+			fmt.Printf("(%d, %d) ", pt.x, pt.y)
+		}
+		fmt.Println()
+	} else {
+		fmt.Println("No path found")
+	}
 }

@@ -2,61 +2,41 @@ package main
 
 import (
 	"fmt"
-	"sort"
 )
 
-// Graph struct
 type Graph struct {
-	vertices map[int][]int
+	adj map[int][]int
 }
 
-// NewGraph creates a new Graph
 func NewGraph() *Graph {
 	return &Graph{
-		vertices: make(map[int][]int),
+		adj: make(map[int][]int),
 	}
 }
 
-// AddEdge adds an edge to the graph
-func (g *Graph) AddEdge(fromVertex, toVertex int) {
-	g.vertices[fromVertex] = append(g.vertices[fromVertex], toVertex)
-	if _, exists := g.vertices[toVertex]; !exists {
-		g.vertices[toVertex] = []int{}
-	}
+func (g *Graph) AddEdge(v, w int) {
+	g.adj[v] = append(g.adj[v], w)
 }
 
-// PrintGraph prints the adjacency list
-func (g *Graph) PrintGraph() {
-	for v, edges := range g.vertices {
-		fmt.Printf("%d : %v\n", v, edges)
-	}
-}
-
-// BFS performs Breadth First Search
-func (g *Graph) BFS(startVertex int) []int {
+func (g *Graph) BFS(s int) {
 	visited := make(map[int]bool)
-	queue := []int{}
-	result := []int{}
+	queue := []int{s}
 
-	visited[startVertex] = true
-	queue = append(queue, startVertex)
+	visited[s] = true
 
 	for len(queue) > 0 {
-		vertex := queue[0]
-		queue = queue[1:] // Dequeue
-		
-		// Typically result for BFS isn't just visited set but order or reachable nodes
-		// Here we match Python's return which is just the set of visited nodes
-		result = append(result, vertex)
+		u := queue[0]
+		queue = queue[1:]
+		fmt.Printf("%d ", u)
 
-		for _, neighbor := range g.vertices[vertex] {
-			if !visited[neighbor] {
-				visited[neighbor] = true
-				queue = append(queue, neighbor)
+		for _, v := range g.adj[u] {
+			if !visited[v] {
+				visited[v] = true
+				queue = append(queue, v)
 			}
 		}
 	}
-	return result
+	fmt.Println()
 }
 
 func main() {
@@ -68,9 +48,6 @@ func main() {
 	g.AddEdge(2, 3)
 	g.AddEdge(3, 3)
 
-	g.PrintGraph()
-
-	res := g.BFS(2)
-	sort.Ints(res)
-	fmt.Println("BFS Result (starting from 2):", res)
+	fmt.Println("Following is Breadth First Traversal (starting from vertex 2)")
+	g.BFS(2)
 }

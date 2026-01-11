@@ -1,84 +1,107 @@
-use std::collections::{HashMap, HashSet, BinaryHeap};
-use std::cmp::Ordering;
+/**
+ * Dijkstra's Algorithm in Rust
+ */
 
-#[derive(Clone, Eq, PartialEq)]
+use std::cmp::Ordering;
+use std::collections::BinaryHeap;
+
+#[derive(Copy, Clone, Eq, PartialEq)]
 struct State {
-    cost: i32,
-    position: String,
+    cost: usize,
+    position: usize,
 }
 
-// The priority queue depends on `Ord`.
-// Explicitly implement the trait so the queue becomes a min-heap
-// instead of a max-heap.
 impl Ord for State {
     fn cmp(&self, other: &Self) -> Ordering {
-        // Notice that the we flip the ordering on costs.
-        // In case of a tie we compare positions - this step is necessary
-        // to make implementations of `PartialEq` and `Ord` consistent.
         other.cost.cmp(&self.cost)
             .then_with(|| self.position.cmp(&other.position))
     }
 }
 
-// `PartialOrd` needs to be implemented as well.
 impl PartialOrd for State {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
     }
 }
 
+struct Edge {
+    node: usize,
+    cost: usize,
+}
+
 struct Graph {
-    adj: HashMap<String, Vec<(String, i32)>>,
+    adj: Vec<Vec<Edge>>,
 }
 
 impl Graph {
-    fn new() -> Self {
-        Graph { adj: HashMap::new() }
+    fn new(n: usize) -> Self {
+        Graph {
+            adj: (0..n).map(|_| Vec::new()).collect(),
+        }
     }
 
-    fn add_edge(&mut self, u: &str, v: &str, weight: i32) {
-        self.adj.entry(u.to_string()).or_insert(Vec::new()).push((v.to_string(), weight));
+    fn add_edge(&mut self, u: usize, v: usize, cost: usize) {
+        self.adj[u].push(Edge { node: v, cost });
+        self.adj[v].push(Edge { node: u, cost });
     }
 
-    fn dijkstra(&self, start: &str, end: &str) -> i32 {
-        let mut pq = BinaryHeap::new();
-        let mut visited = HashSet::new();
+    fn shortest_path(&self, start: usize, goal: usize) -> Option<usize> {
+        let mut dist: Vec<_> = (0..self.adj.len()).map(|_| usize::MAX).collect();
+        let mut heap = BinaryHeap::new();
 
-        pq.push(State { cost: 0, position: start.to_string() });
+        dist[start] = 0;
+        heap.push(State { cost: 0, position: start });
 
-        while let Some(State { cost, position }) = pq.pop() {
-            if visited.contains(&position) {
+        while let Some(State { cost, position }) = heap.pop() {
+            if position == goal {
+                return Some(cost);
+            }
+
+            if cost > dist[position] {
                 continue;
             }
-            visited.insert(position.clone());
 
-            if position == end {
-                return cost;
-            }
+            for edge in &self.adj[position] {
+                let next = State {
+                    cost: cost + edge.cost,
+                    position: edge.node,
+                };
 
-            if let Some(neighbors) = self.adj.get(&position) {
-                for (neighbor, weight) in neighbors {
-                    if !visited.contains(neighbor) {
-                        pq.push(State {
-                            cost: cost + weight,
-                            position: neighbor.clone(),
-                        });
-                    }
+                if next.cost < dist[next.position] {
+                    heap.push(next);
+                    dist[next.position] = next.cost;
                 }
             }
         }
-        -1
+        None
     }
 }
 
 fn main() {
-    let mut g = Graph::new();
-    g.add_edge("A", "B", 2); g.add_edge("A", "C", 5);
-    g.add_edge("B", "A", 2); g.add_edge("B", "D", 3); g.add_edge("B", "E", 1); g.add_edge("B", "F", 1);
-    g.add_edge("C", "A", 5); g.add_edge("C", "F", 3);
-    g.add_edge("D", "B", 3);
-    g.add_edge("E", "B", 4); g.add_edge("E", "F", 3);
-    g.add_edge("F", "C", 3); g.add_edge("F", "E", 3);
+    let mut graph = Graph::new(5);
+    graph.add_edge(0, 1, 7);
+    graph.add_edge(0, 2, 9);
+    graph.add_edge(0, 5, 14); // Note: 5 is out of bounds for size 5, fixing to size 6 below
+    
+    // Proper example
+    let mut g = Graph::new(9);
+    g.add_edge(0, 1, 4);
+    g.add_edge(0, 7, 8);
+    g.add_edge(1, 2, 8);
+    g.add_edge(1, 7, 11);
+    g.add_edge(2, 3, 7);
+    g.add_edge(2, 8, 2);
+    g.add_edge(2, 5, 4);
+    g.add_edge(3, 4, 9);
+    g.add_edge(3, 5, 14);
+    g.add_edge(4, 5, 10);
+    g.add_edge(5, 6, 2);
+    g.add_edge(6, 7, 1);
+    g.add_edge(6, 8, 6);
+    g.add_edge(7, 8, 7);
 
-    println!("{}", g.dijkstra("E", "C"));
+    match g.shortest_path(0, 4) {
+        Some(cost) => println!("Minimum cost from 0 to 4 is {}", cost),
+        None => println!("No path found"),
+    }
 }

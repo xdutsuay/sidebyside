@@ -1,48 +1,43 @@
 /**
- * DFS implementation in JavaScript
+ * Depth First Search Algorithm
  */
+
 class Graph {
     constructor() {
-        this.adj = {};
+        this.adj = new Map();
+        this.visited = new Set();
     }
 
-    addEdge(u, v) {
-        if (!this.adj[u]) this.adj[u] = [];
-        this.adj[u].push(v);
-        if (!this.adj[v]) this.adj[v] = [];
+    addEdge(v, w) {
+        if (!this.adj.has(v)) {
+            this.adj.set(v, []);
+        }
+        this.adj.get(v).push(w);
     }
 
-    dfs(start) {
-        let explored = new Set();
-        let stack = [start];
-        explored.add(start);
+    DFS(v) {
+        this.visited.add(v);
+        console.log(v + " ");
 
-        while (stack.length > 0) {
-            let v = stack.pop();
-            explored.add(v);
-
-            let neighbors = this.adj[v] || [];
-            // Python used reversed() to simulate standard order when popping
-            // we can just iterate.
-            for (let i = neighbors.length - 1; i >= 0; i--) {
-                let adj = neighbors[i];
-                if (!explored.has(adj)) {
-                    stack.push(adj);
+        let neighbors = this.adj.get(v);
+        if (neighbors) {
+            for (let i of neighbors) {
+                if (!this.visited.has(i)) {
+                    this.DFS(i);
                 }
             }
         }
-        return explored;
     }
 }
 
-const g = new Graph();
-g.addEdge("A", "B"); g.addEdge("A", "C"); g.addEdge("A", "D");
-g.addEdge("B", "A"); g.addEdge("B", "D"); g.addEdge("B", "E");
-g.addEdge("C", "A"); g.addEdge("C", "F");
-g.addEdge("D", "B"); g.addEdge("D", "D");
-g.addEdge("E", "B"); g.addEdge("E", "F");
-g.addEdge("F", "C"); g.addEdge("F", "E"); g.addEdge("F", "G");
-g.addEdge("G", "F");
+// Driver Code
+let g = new Graph();
+g.addEdge(0, 1);
+g.addEdge(0, 2);
+g.addEdge(1, 2);
+g.addEdge(2, 0);
+g.addEdge(2, 3);
+g.addEdge(3, 3);
 
-const result = g.dfs("A");
-console.log("DFS Result:", Array.from(result).sort());
+console.log("Following is Depth First Traversal (starting from vertex 2)");
+g.DFS(2);

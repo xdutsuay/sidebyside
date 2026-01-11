@@ -1,7 +1,7 @@
 <div align="center">
-  <h1>SideBySide Algorithms</h1>
-  <h3>Learn Algorithms by Comparing Languages</h3>
-  <p><em>Converting TheAlgorithms/Python into C++, JavaScript, Rust, and Go for interactive learning.</em></p>
+  <h1>Side-by-Side Algorithms</h1>
+  <h3>Master Algorithms in C++, JS, Rust, & Go</h3>
+  <p><em>A multi-language learning companion to TheAlgorithms/Python. Compare, Implement, and Learn.</em></p>
 </div>
 
 > [!IMPORTANT]

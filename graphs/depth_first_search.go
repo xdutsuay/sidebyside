@@ -1,54 +1,43 @@
 package main
 
-import (
-	"fmt"
-	"sort"
-)
+import "fmt"
 
 type Graph struct {
-	adj map[string][]string
+	adj map[int][]int
 }
 
 func NewGraph() *Graph {
-	return &Graph{adj: make(map[string][]string)}
+	return &Graph{
+		adj: make(map[int][]int),
+	}
 }
 
-func (g *Graph) AddEdge(u, v string) {
-	g.adj[u] = append(g.adj[u], v)
+func (g *Graph) AddEdge(v, w int) {
+	g.adj[v] = append(g.adj[v], w)
 }
 
-func (g *Graph) DFS(start string) []string {
-	explored := make(map[string]bool)
-	stack := []string{start}
-	explored[start] = true
-	var result []string
+func (g *Graph) DFS(v int, visited map[int]bool) {
+	visited[v] = true
+	fmt.Printf("%d ", v)
 
-	for len(stack) > 0 {
-		// Pop
-		index := len(stack) - 1
-		v := stack[index]
-		stack = stack[:index]
-
-		result = append(result, v)
-
-		neighbors := g.adj[v]
-		// Reverse iteration
-		for i := len(neighbors) - 1; i >= 0; i-- {
-			neighbor := neighbors[i]
-			if !explored[neighbor] {
-				stack = append(stack, neighbor)
-				explored[neighbor] = true // Mark here to match python set logic effectively
-			}
+	for _, next := range g.adj[v] {
+		if !visited[next] {
+			g.DFS(next, visited)
 		}
 	}
-	return result
 }
 
 func main() {
 	g := NewGraph()
-	g.AddEdge("A", "B")
-	g.AddEdge("A", "C")
-	// ... add other edges
-	
-	fmt.Println(g.DFS("A"))
+	g.AddEdge(0, 1)
+	g.AddEdge(0, 2)
+	g.AddEdge(1, 2)
+	g.AddEdge(2, 0)
+	g.AddEdge(2, 3)
+	g.AddEdge(3, 3)
+
+	fmt.Println("Following is Depth First Traversal (starting from vertex 2)")
+	visited := make(map[int]bool)
+	g.DFS(2, visited)
+	fmt.Println()
 }

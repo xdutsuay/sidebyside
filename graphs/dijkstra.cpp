@@ -1,84 +1,87 @@
-#include <functional>
+/**
+ * @file
+ * @brief Dijkstra's Algorithm Implementation
+ */
+
+#include <climits>
 #include <iostream>
-#include <map>
 #include <queue>
-#include <set>
-#include <string>
 #include <vector>
 
 using namespace std;
 
-// Structure to represent a node in the priority queue
-struct Node {
-  int cost;
-  string vertex;
+#define INF INT_MAX
 
-  // Overload < operator for priority_queue (min-heap behavior)
-  bool operator>(const Node &other) const { return cost > other.cost; }
-};
+// Pair of (weight, vertex)
+typedef pair<int, int> iPair;
 
 class Graph {
-private:
-  map<string, vector<pair<string, int>>> adj;
+  int V;
+  vector<vector<iPair>> adj;
 
 public:
-  void add_edge(string u, string v, int weight) {
-    adj[u].push_back({v, weight});
-  }
-
-  int dijkstra(string start, string end) {
-    // Min-heap
-    priority_queue<Node, vector<Node>, greater<Node>> pq;
-    set<string> visited;
-
-    pq.push({0, start});
-
-    while (!pq.empty()) {
-      Node current = pq.top();
-      pq.pop();
-
-      string u = current.vertex;
-      int cost = current.cost;
-
-      if (visited.count(u))
-        continue;
-      visited.insert(u);
-
-      if (u == end)
-        return cost;
-
-      if (adj.find(u) != adj.end()) {
-        for (auto &edge : adj[u]) {
-          string v = edge.first;
-          int weight = edge.second;
-
-          if (visited.count(v))
-            continue;
-
-          pq.push({cost + weight, v});
-        }
-      }
-    }
-    return -1;
-  }
+  Graph(int V);
+  void addEdge(int u, int v, int w);
+  void shortestPath(int s);
 };
 
-int main() {
-  Graph g;
-  g.add_edge("A", "B", 2);
-  g.add_edge("A", "C", 5);
-  g.add_edge("B", "A", 2);
-  g.add_edge("B", "D", 3);
-  g.add_edge("B", "E", 1);
-  g.add_edge("B", "F", 1);
-  g.add_edge("C", "A", 5);
-  g.add_edge("C", "F", 3);
-  g.add_edge("D", "B", 3);
-  g.add_edge("E", "B", 4);
-  g.add_edge("E", "F", 3);
-  g.add_edge("F", "C", 3);
-  g.add_edge("F", "E", 3);
+Graph::Graph(int V) {
+  this->V = V;
+  adj.resize(V);
+}
 
-  cout << g.dijkstra("E", "C") << endl; // Expected: 6
+void Graph::addEdge(int u, int v, int w) {
+  adj[u].push_back(make_pair(w, v));
+  adj[v].push_back(make_pair(w, u));
+}
+
+void Graph::shortestPath(int src) {
+  priority_queue<iPair, vector<iPair>, greater<iPair>> pq;
+  vector<int> dist(V, INF);
+
+  pq.push(make_pair(0, src));
+  dist[src] = 0;
+
+  while (!pq.empty()) {
+    int u = pq.top().second;
+    pq.pop();
+
+    for (auto x : adj[u]) {
+      int v = x.second;
+      int weight = x.first;
+
+      if (dist[v] > dist[u] + weight) {
+        dist[v] = dist[u] + weight;
+        pq.push(make_pair(dist[v], v));
+      }
+    }
+  }
+
+  printf("Vertex Distance from Source\n");
+  for (int i = 0; i < V; ++i)
+    printf("%d \t\t %d\n", i, dist[i]);
+}
+
+int main() {
+  int V = 9;
+  Graph g(V);
+
+  g.addEdge(0, 1, 4);
+  g.addEdge(0, 7, 8);
+  g.addEdge(1, 2, 8);
+  g.addEdge(1, 7, 11);
+  g.addEdge(2, 3, 7);
+  g.addEdge(2, 8, 2);
+  g.addEdge(2, 5, 4);
+  g.addEdge(3, 4, 9);
+  g.addEdge(3, 5, 14);
+  g.addEdge(4, 5, 10);
+  g.addEdge(5, 6, 2);
+  g.addEdge(6, 7, 1);
+  g.addEdge(6, 8, 6);
+  g.addEdge(7, 8, 7);
+
+  g.shortestPath(0);
+
   return 0;
 }
